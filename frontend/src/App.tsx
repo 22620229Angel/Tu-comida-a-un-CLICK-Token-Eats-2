@@ -1,25 +1,39 @@
+// src/App.tsx
 import React, { useState } from "react";
 import { AdminAddProduct } from "./components/adminAddProduct";
 import { ProductList } from "./components/productList";
+import { OrderList } from "./components/orderList";
+
+type View = "menu" | "admin" | "orders";
 
 function App() {
-  const [view, setView] = useState<"admin" | "catalog">("catalog");
+  const [view, setView] = useState<View>("menu");
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
       <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
-        <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
           <h1 className="font-semibold">TokenEats Dashboard</h1>
           <div className="space-x-2 text-sm">
             <button
-              onClick={() => setView("catalog")}
+              onClick={() => setView("menu")}
               className={`px-3 py-1 rounded-lg ${
-                view === "catalog"
+                view === "menu"
                   ? "bg-slate-800 text-slate-50"
                   : "text-slate-400 hover:bg-slate-800/60"
               }`}
             >
-              Catálogo
+              Menú
+            </button>
+            <button
+              onClick={() => setView("orders")}
+              className={`px-3 py-1 rounded-lg ${
+                view === "orders"
+                  ? "bg-slate-800 text-slate-50"
+                  : "text-slate-400 hover:bg-slate-800/60"
+              }`}
+            >
+              Pedidos
             </button>
             <button
               onClick={() => setView("admin")}
@@ -35,7 +49,9 @@ function App() {
         </div>
       </header>
 
-      {view === "catalog" ? <ProductList /> : <AdminAddProduct />}
+      {view === "menu" && <ProductList />}
+      {view === "orders" && <OrderList />}
+      {view === "admin" && <AdminAddProduct />}
     </div>
   );
 }

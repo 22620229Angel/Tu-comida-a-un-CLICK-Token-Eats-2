@@ -1,5 +1,5 @@
 // src/stellar/client.ts
-import { Client as ContractClient, networks } from "crud_productos2";
+import { Client as ContractClient, networks } from "../bindings/src/index";
 import type { SignTransaction } from "@stellar/stellar-sdk/contract";
 import {
   isConnected,
@@ -46,7 +46,6 @@ export async function getTokenEatsClient() {
   rpcUrl,
   publicKey: address,
 
-  // 👇 Aquí ya no hacemos wrapper, solo pasamos la función de Freighter
   signTransaction: freighterSignTransaction as SignTransaction,
 });
 

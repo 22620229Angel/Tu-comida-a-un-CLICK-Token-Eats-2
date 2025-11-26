@@ -1,5 +1,5 @@
 // src/stellar/orderActions.ts
-import { Client as ContractClient, networks } from "crud_productos2";
+import { Client as ContractClient, networks } from "../bindings/src/index"; // o el nombre de tu binding
 import {
   isConnected,
   requestAccess,
@@ -8,7 +8,7 @@ import {
 } from "@stellar/freighter-api";
 import type { SignTransaction } from "@stellar/stellar-sdk/contract";
 
-// Client firmado para crear pedidos (no requiere ser admin)
+// 🚩 Cliente firmado para operaciones sobre pedidos (create + update_status)
 async function getSignedClientForOrders() {
   const connected = await isConnected();
   if (!connected) {
@@ -37,22 +37,25 @@ async function getSignedClientForOrders() {
   return client;
 }
 
-/**
- * Crea un pedido en el contrato con la lista de nombres de productos.
- * En tu caso lo usaremos con un solo producto: [selected.name]
- */
+// Ya lo tenías:
 export async function createOrderForProducts(
   productNames: string[]
 ): Promise<number> {
   const client = await getSignedClientForOrders();
-
-  // Llamada al método Soroban `create_order`
   const tx = await client.create_order({ products: productNames });
-
-  // Freighter firma y se envía la tx
   const sent = await tx.signAndSend();
+  return sent.result as unknown as number;
+}
 
-  // El contrato devuelve un u32 (id del pedido)
-  const orderId = sent.result as unknown as number;
-  return orderId;
+// 👇 NUEVO: cambiar estado del pedido
+export async function updateOrderStatus(
+  orderId: number,
+  status: string
+): Promise<void> {
+  const client = await getSignedClientForOrders();
+  const tx = await client.update_order_status({
+    order_id: orderId,
+    status,
+  });
+  await tx.signAndSend();
 }

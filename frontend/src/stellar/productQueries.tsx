@@ -1,5 +1,5 @@
 // src/stellar/productQueries.tsx
-import { Client as ContractClient, networks } from "crud_productos2";
+import { Client as ContractClient, networks } from "../bindings/src/index";
 
 const SOROBAN_RPC = "https://soroban-testnet.stellar.org";
 

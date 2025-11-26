@@ -34,7 +34,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CDOEXGYDRQLO2T5PS2DD3NG4BREWWUORCKDMKXM3H7RAV3FFSWOVLAHQ",
+    contractId: "CCQBTU4VX7SPGJMQZ6PDEHWUKNXYLKCD2V35ITY4NU6JCNX45PKKHMMP",
   }
 } as const
 
@@ -78,7 +78,7 @@ export interface Client {
      * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
      */
     simulate?: boolean;
-  }) => Promise<AssembledTransaction<Array<any>>>
+  }) => Promise<AssembledTransaction<Array<string>>>
 
   /**
    * Construct and simulate a initialize transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -340,7 +340,7 @@ export class Client extends ContractClient {
   constructor(public readonly options: ContractClientOptions) {
     super(
       new ContractSpec([ "AAAAAAAAAAAAAAAJZ2V0X2FkbWluAAAAAAAAAAAAAAEAAAAT",
-        "AAAAAAAAAAAAAAAJZ2V0X29yZGVyAAAAAAAAAQAAAAAAAAAIb3JkZXJfaWQAAAAEAAAAAQAAA+oAAAAA",
+        "AAAAAAAAAAAAAAAJZ2V0X29yZGVyAAAAAAAAAQAAAAAAAAAIb3JkZXJfaWQAAAAEAAAAAQAAA+oAAAAQ",
         "AAAAAAAAADxJbmljaWFsaXphIGVsIGNvbnRyYXRvIGNvbiBhZG1pbmlzdHJhZG9yIHkgZXN0YWRvcyBkZSBwZWRpZG8AAAAKaW5pdGlhbGl6ZQAAAAAAAQAAAAAAAAAFYWRtaW4AAAAAAAATAAAAAA==",
         "AAAAAAAAAAAAAAALYWRkX3Byb2R1Y3QAAAAAAwAAAAAAAAAEbmFtZQAAABAAAAAAAAAACHF1YW50aXR5AAAABQAAAAAAAAAFcHJpY2UAAAAAAAAFAAAAAA==",
         "AAAAAAAAAAAAAAALZ2V0X3Byb2R1Y3QAAAAAAQAAAAAAAAAEbmFtZQAAABAAAAABAAAD6gAAAAA=",
@@ -358,7 +358,7 @@ export class Client extends ContractClient {
   }
   public readonly fromJSON = {
     get_admin: this.txFromJSON<string>,
-        get_order: this.txFromJSON<Array<any>>,
+        get_order: this.txFromJSON<Array<string>>,
         initialize: this.txFromJSON<null>,
         add_product: this.txFromJSON<null>,
         get_product: this.txFromJSON<Array<any>>,
