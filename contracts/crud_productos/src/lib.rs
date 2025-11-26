@@ -116,8 +116,8 @@ impl Contract {
         }
 
         let mut data = Vec::new(&env);
-        data.push_back(quantity.into_val(&env));  // 👈
-        data.push_back(price.into_val(&env));     // 👈
+        data.push_back(quantity.into_val(&env)); 
+        data.push_back(price.into_val(&env));    
 
         products.set(name.clone(), data);
         env.storage().persistent().set(&PRODUCTS_KEY, &products);
@@ -151,9 +151,9 @@ impl Contract {
             panic!("Invalid product data");
         }
 
-        let current_quantity: i32 = data.get(0).unwrap().try_into().unwrap();  // 👈
+        let current_quantity: i32 = data.get(0).unwrap().try_into().unwrap();  
         let new_quantity = current_quantity + amount;
-        data.set(0, new_quantity.into_val(env));  // 👈
+        data.set(0, new_quantity.into_val(env));  
 
         products.set(name.clone(), data);
         env.storage().persistent().set(&PRODUCTS_KEY, &products);
@@ -167,13 +167,13 @@ impl Contract {
             panic!("Invalid product data");
         }
 
-        let current_quantity: i32 = data.get(0).unwrap().try_into().unwrap();  // 👈
+        let current_quantity: i32 = data.get(0).unwrap().try_into().unwrap(); 
         if current_quantity < amount {
             panic!("Insufficient stock");
         }
 
         let new_quantity = current_quantity - amount;
-        data.set(0, new_quantity.into_val(env));  // 👈
+        data.set(0, new_quantity.into_val(env)); 
 
         products.set(name.clone(), data);
         env.storage().persistent().set(&PRODUCTS_KEY, &products);
