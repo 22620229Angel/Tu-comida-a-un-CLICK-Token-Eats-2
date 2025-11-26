@@ -1,0 +1,121 @@
+Plan de Calidad
+Proyecto: Token Eats – Tu comida a un clic
+1) Propósito y Alcance de la Calidad
+
+Garantizar que pedidos, pagos y notificaciones funcionen íntegramente en Stellar:
+
+Pagos: cliente → comerciante usando USDC en Stellar.
+
+Escrow y recompensas: contrato Soroban para retener fondos del pedido, liberar al entregar, y acumular recompensas.
+
+On/Off-ramp: depósitos/retiros vía SEP-24 con un anchor compatible (para convertir MXN⇄USDC fuera de la app). 
+developers.stellar.org
++2
+developers.stellar.org
++2
+
+Autenticación: SEP-10 para sesiones web firmadas con la wallet del usuario (sin contraseñas). 
+developers.stellar.org
++1
+
+Wallet: Freighter para firma de transacciones en el navegador; también soporta tokens Soroban. 
+developers.stellar.org
++2
+Freighter
++2
+
+Contratos inteligentes: Soroban en mainnet (lanzado en 2024) para lógica on-chain. 
+Stellar
++2
+Stellar
++2
+
+| Métrica                                    | Objetivo                              | Cómo medir                                                |
+| ------------------------------------------ | ------------------------------------- | --------------------------------------------------------- |
+| **Cobertura unitaria** (backend/contratos) | ≥ 80% líneas                          | Jest/Vitest + `soroban-cli test`                          |
+| **Tiempo de confirmación** (p95)           | ≤ 10 s desde “pagar” a “aceptado”     | Observando cierres de ledger y `tx_successful` en Horizon |
+| **Éxito de tx**                            | ≥ 98% (excluyendo rechazos por saldo) | Ratio `successful/total` en logs Horizon                  |
+| **Fees promedio**                          | Estables y bajos (alerta si >×3 sem.) | Fee stats por red                                         |
+| **Uptime del backend**                     | ≥ 99.5%                               | Monitoreo                                                 |
+| **Satisfacción UAT**                       | ≥ 4.2/5                               | Encuesta UAT                                              |
+
+3) Procedimientos de Revisión (MoProSoft adaptado a Stellar)
+
+Requisitos
+
+Historias incluyen criterios on-chain (p. ej., “si el comercio no confirma en 30 min, el contrato permite refund al cliente”).
+
+Diseño
+
+ADRs para: formato de memos, manejo de reintentos, selección de anchor SEP-24, predicados de claimable balances si se usan para fallback. 
+developers.stellar.org
++1
+
+Code Review
+
+Cambios en contrato Soroban requieren 2 aprobaciones y pruebas de migración de estado.
+
+Definition of Done
+
+Tests unit/int/e2e verdes, cobertura OK, auditoría básica OWASP + revisión de claves/firmas, simulación en Testnet y/o Futurenet, y dry-run en mainnet.
+
+4) Políticas de Pruebas
+
+Pirámide
+
+Unitarias: lógica del contrato (RUST) y utilidades (precio, impuestos).
+
+Integración: cliente → backend → Soroban → Horizon (RPC).
+
+E2E: flujo “crear pedido → pagar USDC → liberar escrow”.
+
+Casos clave
+
+Pago aprobado y declinado (trustlines, saldo insuficiente).
+
+Reintento por fee insufficiency.
+
+Timeout de entrega → refund automático (contrato).
+
+On/Off-ramp por SEP-24 (webview/redirect) con SEP-10 previo. 
+developers.stellar.org
++1
+
+Rendimiento
+
+Carga en hora pico (12:00–15:00): 100–300 tx/hora por comercio, p95 < 10 s.
+
+Seguridad
+
+No guardar llaves privadas; firma solo en Freighter.
+
+Validación de dominios y stellar.toml del anchor.
+
+Límite de importe por pedido y listas de activos permitidos.
+
+5) Gestión de Configuración y Liberación
+
+Ramas/Versionado
+
+GitFlow ligero + SemVer para dApp y para contrato (migraciones versionadas).
+
+CI/CD
+
+Backend y front: Lint + Test + SAST + Deploy Staging.
+
+Contratos: soroban-cli build/test, despliegue a Testnet, luego mainnet con gate manual.
+
+Monitoreo de tx y ledger en post-release.
+
+Entornos
+
+Futurenet/Testnet para desarrollo; Mainnet para producción (Soroban activo desde 2024).
+
+| Riesgo                  | Mitigación                                                    |
+| ----------------------- | ------------------------------------------------------------- |
+| Congestión/red fees     | Reintentos con fee bump; colas y *backoff*.                   |
+| Anchor SEP-24 inestable | Fallback a otro anchor; modo “solo on-chain” temporal.        |
+| Claves/firmas en front  | Solo Freighter; jamás exponer secreto.                        |
+| Cambios de protocolo    | *Pin* de versiones de SDK y pruebas en testnet antes de prod. |
+| Escrow mal diseñado     | Auditoría de contrato + *pause* y *upgrade path* controlado.  |
+
