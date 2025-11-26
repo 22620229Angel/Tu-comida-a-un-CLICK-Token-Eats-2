@@ -190,43 +190,38 @@ impl Contract {
     }
     // --- GESTIÓN DE PEDIDOS ---
     pub fn create_order(env: Env, products: Vec<String>) -> u32 {
+        // Leer contador actual
         let mut order_id_counter: u32 = env.storage()
             .persistent()
             .get(&ORDER_ID_COUNTER)
             .unwrap_or(0u32);
-        
+
+        // Incrementar y guardar
         order_id_counter += 1;
         env.storage().persistent().set(&ORDER_ID_COUNTER, &order_id_counter);
 
-        let mut order_data = Vec::new(&env);
-        for product in products {
-            order_data.push_back(product.into_val(&env));
-        }
-
-        // Usamos u32 como clave directamente
-        let mut orders: Map<u32, Vec<Val>> = env.storage()
+        // Mapa de pedidos ahora es Map<u32, Vec<String>>
+        let mut orders: Map<u32, Vec<String>> = env.storage()
             .persistent()
             .get(&ORDERS_KEY)
             .unwrap_or_else(|| Map::new(&env));
-        
-        orders.set(order_id_counter, order_data);
+
+        // Guardar directamente el Vec<String> que recibimos
+        orders.set(order_id_counter, products);
 
         env.storage().persistent().set(&ORDERS_KEY, &orders);
 
         order_id_counter
     }
 
-
-    pub fn get_order(env: Env, order_id: u32) -> Vec<Val> {
-        let orders: Map<u32, Vec<Val>> = env.storage()
+    pub fn get_order(env: Env, order_id: u32) -> Vec<String> {
+        let orders: Map<u32, Vec<String>> = env.storage()
             .persistent()
             .get(&ORDERS_KEY)
             .unwrap_or_else(|| Map::new(&env));
         
-        match orders.get(order_id) {
-            Some(data) => data,
-            None => Vec::new(&env),
-        }
+        // Si no existe, regresamos Vec<String> vacío
+        orders.get(order_id).unwrap_or_else(|| Vec::new(&env))
     }
 
     pub fn update_order_status(env: Env, order_id: u32, status: String) {
@@ -241,19 +236,20 @@ impl Contract {
             panic!("Invalid order status");
         }
 
-        let mut orders: Map<u32, Vec<Val>> = env.storage()
+        // Usamos el mismo Map<u32, Vec<String>>
+        let mut orders: Map<u32, Vec<String>> = env.storage()
             .persistent()
             .get(&ORDERS_KEY)
             .unwrap_or_else(|| Map::new(&env));
 
-        if !orders.contains_key(order_id) {
-            panic!("Order not found");
-        }
+        let mut order_data = orders
+            .get(order_id)
+            .unwrap_or_else(|| Vec::new(&env));
 
-        let mut order_data = orders.get(order_id).unwrap().clone();
-        order_data.push_back(status.into_val(&env)); // Agregar el estado al final del pedido
+        // Agregamos el estado como último String del vector
+        order_data.push_back(status);
+
         orders.set(order_id, order_data);
-        
         env.storage().persistent().set(&ORDERS_KEY, &orders);
     }
 
