@@ -1,25 +1,12 @@
 import { Buffer } from "buffer";
-import { Address } from '@stellar/stellar-sdk';
 import {
   AssembledTransaction,
   Client as ContractClient,
-  ClientOptions as ContractClientOptions,
-  MethodOptions,
-  Result,
   Spec as ContractSpec,
-} from '@stellar/stellar-sdk/contract';
-import type {
-  u32,
-  i32,
-  u64,
-  i64,
-  u128,
-  i128,
-  u256,
-  i256,
-  Option,
-  Typepoint,
-  Duration,
+  type ClientOptions as ContractClientOptions,
+  type MethodOptions,
+  type u32,
+  type i32,
 } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk'
 export * as contract from '@stellar/stellar-sdk/contract'
@@ -34,7 +21,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CCQBTU4VX7SPGJMQZ6PDEHWUKNXYLKCD2V35ITY4NU6JCNX45PKKHMMP",
+    contractId: "CC7EVOODA3S5ZNOOQM475RHTETMISZGOJPPGWCIVK2QBGQ4XFH4PNB5U",
   }
 } as const
 
@@ -323,6 +310,8 @@ export interface Client {
 
 }
 export class Client extends ContractClient {
+  options: ContractClientOptions;
+
   static async deploy<T = Client>(
     /** Options for initializing a Client as well as for calling a method, with extras specific to deploying. */
     options: MethodOptions &
@@ -337,7 +326,7 @@ export class Client extends ContractClient {
   ): Promise<AssembledTransaction<T>> {
     return ContractClient.deploy(null, options)
   }
-  constructor(public readonly options: ContractClientOptions) {
+  constructor(options: ContractClientOptions) {
     super(
       new ContractSpec([ "AAAAAAAAAAAAAAAJZ2V0X2FkbWluAAAAAAAAAAAAAAEAAAAT",
         "AAAAAAAAAAAAAAAJZ2V0X29yZGVyAAAAAAAAAQAAAAAAAAAIb3JkZXJfaWQAAAAEAAAAAQAAA+oAAAAQ",
@@ -355,6 +344,7 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAATdXBkYXRlX29yZGVyX3N0YXR1cwAAAAACAAAAAAAAAAhvcmRlcl9pZAAAAAQAAAAAAAAABnN0YXR1cwAAAAAAEAAAAAA=" ]),
       options
     )
+    this.options = options;
   }
   public readonly fromJSON = {
     get_admin: this.txFromJSON<string>,

@@ -1,6 +1,7 @@
 // src/App.tsx
-import React, { useState } from "react";
-import { AdminAddProduct } from "./components/adminAddProduct";
+import { useState } from "react";
+import { CartProvider } from "./context/CartContext";
+import { AdminPanel } from "./components/AdminPanel";
 import { ProductList } from "./components/productList";
 import { OrderList } from "./components/orderList";
 
@@ -10,6 +11,7 @@ function App() {
   const [view, setView] = useState<View>("menu");
 
   return (
+    <CartProvider>
     <div className="min-h-screen bg-slate-950 text-slate-50">
       <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
@@ -43,7 +45,7 @@ function App() {
                   : "text-slate-400 hover:bg-emerald-500/20"
               }`}
             >
-              Admin
+              Admin (API)
             </button>
           </div>
         </div>
@@ -51,8 +53,9 @@ function App() {
 
       {view === "menu" && <ProductList />}
       {view === "orders" && <OrderList />}
-      {view === "admin" && <AdminAddProduct />}
+      {view === "admin" && <AdminPanel />}
     </div>
+    </CartProvider>
   );
 }
 

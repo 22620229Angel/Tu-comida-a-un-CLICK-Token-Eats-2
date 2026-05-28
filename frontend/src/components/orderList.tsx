@@ -1,8 +1,7 @@
 // src/components/orderList.tsx
 import React, { useEffect, useState } from "react";
-import { fetchOrders } from "../stellar/orderQueries";
-import type { Order, OrderStatus } from "../stellar/orderQueries";
-import { updateOrderStatus } from "../stellar/orderActions";
+import { fetchOrders, updateOrderStatus } from "../api/client";
+import type { Order, OrderStatus } from "../api/client";
 
 
 const statusColors: Record<string, string> = {

@@ -69,8 +69,8 @@ impl Contract {
         }
 
         let mut data = Vec::new(&env);
-        data.push_back(quantity.into_val(&env));  // ✅ Correcto
-        data.push_back(price.into_val(&env));     // ✅ Correcto
+        data.push_back(quantity.into_val(&env));  
+        data.push_back(price.into_val(&env));    
 
         products.set(name.clone(), data);
         env.storage().persistent().set(&PRODUCTS_KEY, &products);
@@ -117,7 +117,7 @@ impl Contract {
 
         let mut data = Vec::new(&env);
         data.push_back(quantity.into_val(&env));  // 👈
-        data.push_back(price.into_val(&env));     // 👈
+        data.push_back(price.into_val(&env));     
 
         products.set(name.clone(), data);
         env.storage().persistent().set(&PRODUCTS_KEY, &products);

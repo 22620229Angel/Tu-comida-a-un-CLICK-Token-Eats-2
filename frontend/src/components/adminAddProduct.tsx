@@ -1,6 +1,6 @@
 // src/components/AdminAddProduct.tsx
 import React, { useState } from "react";
-import { addProductWithFreighter } from "../stellar/adminActions";
+import { addProduct } from "../api/client";
 
 export const AdminAddProduct: React.FC = () => {
   const [name, setName] = useState("");
@@ -11,8 +11,8 @@ export const AdminAddProduct: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      setStatus("Conectando con Freighter y firmando la transacción...");
-      await addProductWithFreighter(
+      setStatus("Agregando producto a través de la API...");
+      await addProduct(
         name,
         parseInt(qty, 10),
         parseInt(price, 10)
@@ -36,8 +36,7 @@ export const AdminAddProduct: React.FC = () => {
           Panel Admin – Agregar producto
         </h2>
         <p className="text-sm text-slate-400 mb-6">
-          Conecta tu cuenta admin en Freighter y registra nuevos productos para
-          TokenEats.
+          Registra nuevos productos para TokenEats a través de la API.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -98,7 +97,7 @@ export const AdminAddProduct: React.FC = () => {
                        focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900
                        transition-colors"
           >
-            Agregar producto con Freighter
+            Agregar producto
           </button>
         </form>
 
