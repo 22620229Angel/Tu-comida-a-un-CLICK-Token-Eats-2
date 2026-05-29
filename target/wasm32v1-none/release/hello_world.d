@@ -1,0 +1,1 @@
+/home/ors/Documentos/Proyecto/Tu-comida-a-un-CLICK-Token-Eats-2/target/wasm32v1-none/release/hello_world.wasm: /home/ors/Documentos/Proyecto/Tu-comida-a-un-CLICK-Token-Eats-2/contracts/crud_productos/src/lib.rs
