@@ -1,17 +1,24 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchProducts, createOrder } from "../api/client";
 import type { Product } from "../api/client";
 import { useCart } from "../context/CartContext";
+import { useWallet } from "../context/WalletContext";
 
-export const ProductList: React.FC = () => {
+export function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [orderMsg, setOrderMsg] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [userAddress, setUserAddress] = useState("");
+  const [lastOrderId, setLastOrderId] = useState<number | null>(null);
+  const [paying, setPaying] = useState(false);
+  const [payMsg, setPayMsg] = useState<string | null>(null);
 
   const { items, totalItems, totalPrice, addItem, removeItem, updateQuantity, clearCart } = useCart();
+  const { connected, publicKey, connect, connecting } = useWallet();
 
   useEffect(() => {
     const load = async () => {
@@ -33,17 +40,56 @@ export const ProductList: React.FC = () => {
 
   const handleCreateOrder = async () => {
     if (items.length === 0) return;
+    if (!userName.trim()) { setOrderMsg("❌ Ingresa tu nombre"); return; }
+    if (!userAddress.trim()) { setOrderMsg("❌ Ingresa tu dirección"); return; }
     try {
       setCreating(true);
       setOrderMsg("Creando pedido en la blockchain…");
       const productNames = items.flatMap((i) => Array(i.quantity).fill(i.name));
-      const { orderId } = await createOrder(productNames);
-      setOrderMsg(`✅ Pedido #${orderId} creado con ${totalItems} producto(s)`);
+      const { orderId } = await createOrder(productNames, userName.trim(), userAddress.trim(), totalPrice);
+      setOrderMsg(`✅ Pedido #${orderId} creado — ${totalItems} producto(s), ${totalPrice} XLM`);
+      setLastOrderId(orderId);
       clearCart();
     } catch (e: any) {
       setOrderMsg(`❌ Error: ${e.message ?? String(e)}`);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handlePay = async () => {
+    if (!lastOrderId || !publicKey) return;
+    setPaying(true);
+    setPayMsg("Preparando pago…");
+    try {
+      const adminRes = await fetch('/api/payments/admin-address');
+      const { address: adminAddress } = await adminRes.json();
+
+      const prepareRes = await fetch('/api/payments/prepare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: totalPrice.toString(), destination: adminAddress, source: publicKey }),
+      });
+      const prepareData = await prepareRes.json();
+      if (!prepareRes.ok) { setPayMsg(`❌ ${prepareData.error}`); setPaying(false); return; }
+
+      setPayMsg("Firma la transacción en Freighter…");
+      const freighter = await import('@stellar/freighter-api');
+      const signed = await freighter.signTransaction(prepareData.xdr);
+
+      const submitRes = await fetch('/api/payments/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ xdr: signed, orderId: lastOrderId }),
+      });
+      const submitData = await submitRes.json();
+      if (!submitRes.ok) { setPayMsg(`❌ ${submitData.error}`); setPaying(false); return; }
+
+      setPayMsg(`✅ Pago confirmado — TX: ${submitData.hash.slice(0, 12)}…`);
+    } catch (e: any) {
+      setPayMsg(`❌ Error de pago: ${e.message ?? String(e)}`);
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -73,7 +119,6 @@ export const ProductList: React.FC = () => {
         )}
 
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Grid de productos */}
           <div className="flex-1">
             {loading && (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
@@ -93,16 +138,11 @@ export const ProductList: React.FC = () => {
                   const inCart = items.find((i) => i.name === p.name);
                   const qty = quantities[p.name] || 1;
                   return (
-                    <div
-                      key={p.name}
-                      className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/80 shadow-lg overflow-hidden"
-                    >
+                    <div key={p.name} className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/80 shadow-lg overflow-hidden">
                       <div className="w-full h-32 bg-slate-800/60 flex items-center justify-center overflow-hidden">
                         {p.image ? (
                           <img src={p.image} alt={p.name} className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
+                            onError={(e) => { e.currentTarget.style.display = 'none' }}
                           />
                         ) : (
                           <div className="flex items-center justify-center w-full h-full">
@@ -113,48 +153,30 @@ export const ProductList: React.FC = () => {
                         )}
                       </div>
                       <div className="p-4 flex flex-col flex-1">
-                      <h2 className="text-sm font-semibold text-slate-50 mb-1">{p.name}</h2>
-                      <p className="text-xs text-slate-400 mb-3 line-clamp-2">Platillo disponible en TokenEats.</p>
-
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-800 mb-3">
-                        <span className="text-xs text-slate-400">
-                          Stock: <span className={`font-semibold ${p.quantity > 0 ? 'text-slate-100' : 'text-rose-400'}`}>{p.quantity}</span>
-                        </span>
-                        <span className="text-sm font-semibold text-emerald-400">{p.price} XLM</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 mt-auto">
-                        <div className="flex items-center rounded-lg border border-slate-700 bg-slate-950">
-                          <button
-                            onClick={() => setQuantities({ ...quantities, [p.name]: Math.max(1, qty - 1) })}
-                            className="px-2 py-1 text-xs text-slate-300 hover:text-slate-50 transition-colors"
-                          >
-                            -
-                          </button>
-                          <span className="px-2 py-1 text-xs font-semibold text-slate-100 min-w-[24px] text-center">{qty}</span>
-                          <button
-                            onClick={() => setQuantities({ ...quantities, [p.name]: qty + 1 })}
-                            className="px-2 py-1 text-xs text-slate-300 hover:text-slate-50 transition-colors"
-                          >
-                            +
+                        <h2 className="text-sm font-semibold text-slate-50 mb-1">{p.name}</h2>
+                        <p className="text-xs text-slate-400 mb-3 line-clamp-2">Platillo disponible en TokenEats.</p>
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-800 mb-3">
+                          <span className="text-xs text-slate-400">
+                            Stock: <span className={`font-semibold ${p.quantity > 0 ? 'text-slate-100' : 'text-rose-400'}`}>{p.quantity}</span>
+                          </span>
+                          <span className="text-sm font-semibold text-emerald-400">{p.price} XLM</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-auto">
+                          <div className="flex items-center rounded-lg border border-slate-700 bg-slate-950">
+                            <button onClick={() => setQuantities({ ...quantities, [p.name]: Math.max(1, qty - 1) })} className="px-2 py-1 text-xs text-slate-300 hover:text-slate-50 transition-colors">-</button>
+                            <span className="px-2 py-1 text-xs font-semibold text-slate-100 min-w-[24px] text-center">{qty}</span>
+                            <button onClick={() => setQuantities({ ...quantities, [p.name]: qty + 1 })} className="px-2 py-1 text-xs text-slate-300 hover:text-slate-50 transition-colors">+</button>
+                          </div>
+                          <button onClick={() => addItem(p.name, p.price, qty)} disabled={p.quantity === 0} className="flex-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-900 hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            {inCart ? `+${qty}` : 'Agregar'}
                           </button>
                         </div>
-
-                        <button
-                          onClick={() => addItem(p.name, p.price, qty)}
-                          disabled={p.quantity === 0}
-                          className="flex-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-900 hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {inCart ? `+${qty}` : 'Agregar'}
-                        </button>
+                        {inCart && (
+                          <p className="mt-2 text-[10px] text-emerald-400 text-center">
+                            {inCart.quantity} en carrito
+                          </p>
+                        )}
                       </div>
-
-                      {inCart && (
-                        <p className="mt-2 text-[10px] text-emerald-400 text-center">
-                          {inCart.quantity} en carrito
-                        </p>
-                      )}
-                    </div>
                     </div>
                   );
                 })}
@@ -162,15 +184,31 @@ export const ProductList: React.FC = () => {
             )}
           </div>
 
-          {/* Panel de carrito */}
           <aside className="w-full lg:w-80 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl flex flex-col">
             <h2 className="text-sm font-semibold text-slate-50 mb-1">Tu carrito</h2>
             <p className="text-xs text-slate-400 mb-4">
               {totalItems === 0 ? 'Aún no has agregado productos.' : `${totalItems} producto(s) — ${totalPrice} XLM`}
             </p>
 
+            <div className="space-y-2 mb-3">
+              <input
+                type="text"
+                placeholder="Tu nombre"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <input
+                type="text"
+                placeholder="Tu dirección"
+                value={userAddress}
+                onChange={(e) => setUserAddress(e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
             {items.length > 0 && (
-              <div className="flex-1 space-y-2 mb-4 max-h-[400px] overflow-y-auto">
+              <div className="flex-1 space-y-2 mb-4 max-h-[300px] overflow-y-auto">
                 {items.map((item) => (
                   <div key={item.name} className="flex items-center justify-between rounded-xl bg-slate-950/60 border border-slate-800 p-3">
                     <div className="flex-1 min-w-0">
@@ -178,25 +216,10 @@ export const ProductList: React.FC = () => {
                       <p className="text-[10px] text-slate-400">{item.price} XLM c/u</p>
                     </div>
                     <div className="flex items-center gap-1 ml-2">
-                      <button
-                        onClick={() => updateQuantity(item.name, item.quantity - 1)}
-                        className="w-6 h-6 rounded bg-slate-800 text-xs text-slate-300 hover:bg-slate-700 transition-colors"
-                      >
-                        -
-                      </button>
+                      <button onClick={() => updateQuantity(item.name, item.quantity - 1)} className="w-6 h-6 rounded bg-slate-800 text-xs text-slate-300 hover:bg-slate-700 transition-colors">-</button>
                       <span className="w-6 text-center text-xs font-semibold text-slate-100">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.name, item.quantity + 1)}
-                        className="w-6 h-6 rounded bg-slate-800 text-xs text-slate-300 hover:bg-slate-700 transition-colors"
-                      >
-                        +
-                      </button>
-                      <button
-                        onClick={() => removeItem(item.name)}
-                        className="w-6 h-6 rounded bg-rose-500/20 text-xs text-rose-300 hover:bg-rose-500/30 transition-colors ml-1"
-                      >
-                        ✕
-                      </button>
+                      <button onClick={() => updateQuantity(item.name, item.quantity + 1)} className="w-6 h-6 rounded bg-slate-800 text-xs text-slate-300 hover:bg-slate-700 transition-colors">+</button>
+                      <button onClick={() => removeItem(item.name)} className="w-6 h-6 rounded bg-rose-500/20 text-xs text-rose-300 hover:bg-rose-500/30 transition-colors ml-1">✕</button>
                     </div>
                   </div>
                 ))}
@@ -206,6 +229,25 @@ export const ProductList: React.FC = () => {
             {orderMsg && (
               <div className={`text-[11px] mb-3 ${orderMsg.startsWith('✅') ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {orderMsg}
+              </div>
+            )}
+
+            {lastOrderId && !orderMsg?.includes('Error') && (
+              <div className="mb-3 p-3 rounded-xl bg-slate-950/60 border border-slate-700">
+                <p className="text-[11px] text-slate-400 mb-2">Pagar con Freighter</p>
+                {!connected ? (
+                  <button onClick={connect} disabled={connecting} className="w-full rounded-lg bg-slate-700 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-600 transition-colors disabled:opacity-50">
+                    {connecting ? 'Conectando…' : 'Conectar Freighter'}
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-slate-500 truncate">{publicKey}</p>
+                    {payMsg && <p className={`text-[10px] ${payMsg.startsWith('✅') ? 'text-emerald-400' : 'text-rose-400'}`}>{payMsg}</p>}
+                    <button onClick={handlePay} disabled={paying} className="w-full rounded-lg bg-indigo-500 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-400 transition-colors disabled:opacity-50">
+                      {paying ? 'Procesando…' : `Pagar ${totalPrice} XLM`}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -222,11 +264,7 @@ export const ProductList: React.FC = () => {
                 >
                   {creating ? 'Creando pedido…' : `Ordenar (${totalItems})`}
                 </button>
-                <button
-                  onClick={clearCart}
-                  disabled={creating}
-                  className="w-full rounded-lg bg-slate-800 px-4 py-2 text-xs text-slate-300 hover:bg-slate-700 transition-colors disabled:opacity-50"
-                >
+                <button onClick={clearCart} disabled={creating} className="w-full rounded-lg bg-slate-800 px-4 py-2 text-xs text-slate-300 hover:bg-slate-700 transition-colors disabled:opacity-50">
                   Vaciar carrito
                 </button>
               </div>
@@ -236,4 +274,4 @@ export const ProductList: React.FC = () => {
       </div>
     </div>
   );
-};
+}

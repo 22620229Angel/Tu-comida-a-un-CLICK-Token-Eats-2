@@ -1,4 +1,4 @@
-const API_BASE = ''; // Vite proxy redirige /api al backend
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export interface Product {
   name: string;
@@ -21,19 +21,29 @@ export interface Order {
   status: OrderStatus;
 }
 
+function getAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem('tokeneats_token');
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
     ...options,
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      localStorage.removeItem('tokeneats_token');
+    }
     throw new Error(body.error || `Error ${res.status}: ${res.statusText}`);
   }
   return res.json();
 }
-
-// ─── Productos ────────────────────────────────────────
 
 export async function fetchProducts(): Promise<Product[]> {
   const data = await request<{ products: Product[] }>('/api/products');
@@ -44,8 +54,6 @@ export async function fetchProduct(name: string): Promise<Product> {
   return request<Product>(`/api/products/${encodeURIComponent(name)}`);
 }
 
-// ─── Órdenes ──────────────────────────────────────────
-
 export async function fetchOrders(): Promise<Order[]> {
   const data = await request<{ orders: Order[] }>('/api/orders');
   return data.orders;
@@ -55,14 +63,12 @@ export async function fetchOrder(id: number): Promise<Order> {
   return request<Order>(`/api/orders/${id}`);
 }
 
-export async function createOrder(products: string[]): Promise<{ orderId: number }> {
+export async function createOrder(products: string[], name?: string, address?: string, totalXlm?: number): Promise<{ orderId: number }> {
   return request<{ orderId: number }>('/api/orders', {
     method: 'POST',
-    body: JSON.stringify({ products }),
+    body: JSON.stringify({ products, name, address, totalXlm }),
   });
 }
-
-// ─── Admin ────────────────────────────────────────────
 
 export async function addProduct(name: string, quantity: number, price: number): Promise<void> {
   await request('/api/admin/products', {

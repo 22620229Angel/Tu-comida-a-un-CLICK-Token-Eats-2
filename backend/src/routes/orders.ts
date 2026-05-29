@@ -1,11 +1,33 @@
 import { Router } from 'express';
 import { listOrders, getOrder, createOrder } from '../lib/soroban';
+import { saveOrderMeta, getOrderMeta, getAllOrderMeta, markAsPaid, type OrderMeta } from '../lib/orderStore';
 
 const router = Router();
 
 const knownStatuses = new Set([
   'creado', 'preparando', 'listo', 'entregado', 'cancelado',
 ]);
+
+function enrichOrder(id: number, data: string[]) {
+  let status = 'desconocido';
+  let products = data;
+
+  const last = data[data.length - 1];
+  if (last && knownStatuses.has(last)) {
+    status = last;
+    products = data.slice(0, -1);
+  }
+
+  const meta = getOrderMeta(id);
+
+  return { id, products, status, ...(meta ? {
+    userName: meta.userName,
+    address: meta.address,
+    paid: meta.paid,
+    totalXlm: meta.totalXlm,
+    createdAt: meta.createdAt,
+  } : {}) };
+}
 
 router.get('/', async (_req, res, next) => {
   try {
@@ -14,16 +36,7 @@ router.get('/', async (_req, res, next) => {
 
     for (const id of ids) {
       const data = await getOrder(id);
-      let status = 'desconocido';
-      let products = data;
-
-      const last = data[data.length - 1];
-      if (last && knownStatuses.has(last)) {
-        status = last;
-        products = data.slice(0, -1);
-      }
-
-      orders.push({ id, products, status });
+      orders.push(enrichOrder(id, data));
     }
 
     res.json({ orders });
@@ -41,16 +54,7 @@ router.get('/:id', async (req, res, next) => {
     }
 
     const data = await getOrder(id);
-    let status = 'desconocido';
-    let products = data;
-
-    const last = data[data.length - 1];
-    if (last && knownStatuses.has(last)) {
-      status = last;
-      products = data.slice(0, -1);
-    }
-
-    res.json({ id, products, status });
+    res.json(enrichOrder(id, data));
   } catch (err) {
     next(err);
   }
@@ -58,7 +62,7 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { products } = req.body;
+    const { products, name, address, totalXlm } = req.body;
 
     if (!Array.isArray(products) || products.length === 0) {
       res.status(400).json({ error: 'Se requiere un array de productos' });
@@ -66,7 +70,23 @@ router.post('/', async (req, res, next) => {
     }
 
     const orderId = await createOrder(products);
-    res.status(201).json({ orderId, products, status: 'creado' });
+
+    saveOrderMeta({
+      orderId,
+      userName: name || 'Anónimo',
+      address: address || '',
+      totalXlm: totalXlm || 0,
+      paid: false,
+      createdAt: new Date().toISOString(),
+    });
+
+    res.status(201).json({
+      orderId,
+      products,
+      status: 'creado',
+      name: name || 'Anónimo',
+      address: address || '',
+    });
   } catch (err) {
     next(err);
   }
