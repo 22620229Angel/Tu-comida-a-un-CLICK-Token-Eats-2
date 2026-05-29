@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import { requireAdmin } from './middleware/auth';
@@ -10,6 +12,9 @@ import authRouter from './routes/auth';
 import paymentsRouter from './routes/payments';
 
 const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
@@ -32,6 +37,13 @@ app.use('/api/products', productsRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/admin', requireAdmin, adminRouter);
+
+const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
+app.use(express.static(frontendDist));
+
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(frontendDist, 'index.html'));
+});
 
 app.use(errorHandler);
 

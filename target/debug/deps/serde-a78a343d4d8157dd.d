@@ -1,0 +1,14 @@
+/home/ors/Documentos/Proyecto/Tu-comida-a-un-CLICK-Token-Eats-2/target/debug/deps/serde-a78a343d4d8157dd.d: /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/ors/Documentos/Proyecto/Tu-comida-a-un-CLICK-Token-Eats-2/target/debug/build/serde-c80382b27f70d824/out/private.rs
+
+/home/ors/Documentos/Proyecto/Tu-comida-a-un-CLICK-Token-Eats-2/target/debug/deps/libserde-a78a343d4d8157dd.rlib: /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/ors/Documentos/Proyecto/Tu-comida-a-un-CLICK-Token-Eats-2/target/debug/build/serde-c80382b27f70d824/out/private.rs
+
+/home/ors/Documentos/Proyecto/Tu-comida-a-un-CLICK-Token-Eats-2/target/debug/deps/libserde-a78a343d4d8157dd.rmeta: /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/ors/Documentos/Proyecto/Tu-comida-a-un-CLICK-Token-Eats-2/target/debug/build/serde-c80382b27f70d824/out/private.rs
+
+/home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/home/ors/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/home/ors/Documentos/Proyecto/Tu-comida-a-un-CLICK-Token-Eats-2/target/debug/build/serde-c80382b27f70d824/out/private.rs:
+
+# env-dep:OUT_DIR=/home/ors/Documentos/Proyecto/Tu-comida-a-un-CLICK-Token-Eats-2/target/debug/build/serde-c80382b27f70d824/out

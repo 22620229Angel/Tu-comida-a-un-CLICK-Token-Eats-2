@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: tokeneats
+    runtime: node
+    region: ohio
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build && cd ../backend && npm install && mkdir -p data
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: PORT
+        value: 10000
+      - key: SOROBAN_RPC_URL
+        value: https://soroban-testnet.stellar.org
+      - key: NETWORK_PASSPHRASE
+        value: Test SDF Network ; September 2015
+      - key: CONTRACT_ID
+        value: CC7EVOODA3S5ZNOOQM475RHTETMISZGOJPPGWCIVK2QBGQ4XFH4PNB5U
+      - key: ADMIN_PUBKEY
+        value: GCWZ7TBXSX2RRDUJ3KDQ42A5JSUG5LFEGUJ6WHPXN274YDOAL7ZZFSZJ
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_SECRET_KEY
+        sync: false
+      - key: OPERATOR_SECRET_KEY
+        sync: false
+      - key: RP_ID
+        sync: false
+      - key: RP_NAME
+        value: TokenEats
