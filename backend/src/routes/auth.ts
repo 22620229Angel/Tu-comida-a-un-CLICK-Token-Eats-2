@@ -16,11 +16,21 @@ import { getAdmin } from '../lib/soroban';
 const router = Router();
 
 const rpName = config.rpName;
-const rpID = config.rpId;
-const origin = config.rpId === 'localhost'
-  ? 'http://localhost:5173'
-  : `https://${config.rpId}`;
 const challengeStore = new Map<string, string>();
+
+function getRpOrigin(req: any): { rpID: string; origin: string } {
+  const originHeader = req.headers.origin;
+  const host = req.headers.host || config.rpId;
+  const protocol = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
+
+  if (originHeader) {
+    const url = new URL(originHeader);
+    return { rpID: url.hostname, origin: originHeader };
+  }
+
+  const rpID = host.includes(':') ? host.split(':')[0] : host;
+  return { rpID, origin: `${protocol}://${host}` };
+}
 
 router.post('/register/begin', async (req, res, next) => {
   try {
@@ -36,6 +46,7 @@ router.post('/register/begin', async (req, res, next) => {
       user = passkeyStore.upsertUser(cleanUser, 'user');
     }
 
+    const { rpID } = getRpOrigin(req);
     const existingCreds = user.credentials.map(c => ({
       id: c.id,
       transports: c.transports as AuthenticatorTransportFuture[],
@@ -77,6 +88,7 @@ router.post('/register/complete', async (req, res, next) => {
       return;
     }
 
+    const { rpID, origin } = getRpOrigin(req);
     const verification = await verifyRegistrationResponse({
       response: req.body,
       expectedChallenge: challenge,
@@ -121,6 +133,7 @@ router.post('/login/begin', async (req, res, next) => {
       return;
     }
 
+    const { rpID } = getRpOrigin(req);
     const allowCredentials = creds.map(c => ({
       id: c.id,
       transports: c.transports as AuthenticatorTransportFuture[],
@@ -160,6 +173,7 @@ router.post('/login/complete', async (req, res, next) => {
 
     username = stored.user.username;
 
+    const { rpID, origin } = getRpOrigin(req);
     const verification = await verifyAuthenticationResponse({
       response: req.body,
       expectedChallenge: challenge,
